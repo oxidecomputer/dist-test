@@ -6,7 +6,9 @@
 //!
 //! It has no dependencies so that release builds stay fast. The `completion`
 //! subcommand exists because the Homebrew formula that `dist` generates calls
-//! it to install shell completions, as it does for the Oxide CLI.
+//! it to install shell completions, as it does for the Oxide CLI. Like the
+//! Oxide CLI, it takes the shell as `-s` or `--shell`, which is the form that
+//! the formula's `shell_parameter_format: :arg` passes: `--shell=bash`.
 
 use std::process::ExitCode;
 
@@ -21,20 +23,30 @@ _arguments \\
   '--help[Print help]' \\
   '--version[Print version]' \\
   '1:command:(completion)' \\
-  '2:shell:(bash fish zsh)'
+  '(-s --shell)'{-s,--shell}'[Shell type]:shell:(bash fish zsh)'
 ";
 
 const FISH_COMPLETION: &str = "\
 complete -c dist-test -l help -d 'Print help'
 complete -c dist-test -l version -d 'Print version'
 complete -c dist-test -n __fish_use_subcommand -a completion -d 'Print a shell completion script'
-complete -c dist-test -n '__fish_seen_subcommand_from completion' -a 'bash fish zsh'
+complete -c dist-test -n '__fish_seen_subcommand_from completion' -s s -l shell -x -a 'bash fish zsh' -d 'Shell type'
 ";
 
 fn usage() -> String {
     format!(
-        "Usage: {NAME} [--help | --version]\n       {NAME} completion <bash|fish|zsh>\n"
+        "Usage: {NAME} [--help | --version]\n       {NAME} completion --shell <bash|fish|zsh>\n"
     )
+}
+
+/// Returns the shell named by the arguments after `completion`, accepting the
+/// same forms as clap: `-s SHELL`, `--shell SHELL`, and `--shell=SHELL`.
+fn completion_shell<'a>(args: &[&'a str]) -> Option<&'a str> {
+    match args {
+        ["-s" | "--shell", shell] => Some(shell),
+        [arg] => arg.strip_prefix("--shell="),
+        _ => None,
+    }
 }
 
 fn main() -> ExitCode {
@@ -50,8 +62,12 @@ fn main() -> ExitCode {
             println!("{NAME} {VERSION}");
             ExitCode::SUCCESS
         }
-        ["completion", shell] => {
-            let script = match *shell {
+        ["completion", rest @ ..] => {
+            let Some(shell) = completion_shell(rest) else {
+                eprint!("{}", usage());
+                return ExitCode::FAILURE;
+            };
+            let script = match shell {
                 "bash" => BASH_COMPLETION,
                 "fish" => FISH_COMPLETION,
                 "zsh" => ZSH_COMPLETION,

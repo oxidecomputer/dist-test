@@ -1,0 +1,40 @@
+[workspace]
+members = ["cargo:."]
+
+# Config for 'dist'
+[dist]
+# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "1.0.19"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = []
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "aarch64-pc-windows-msvc", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl"]
+# Which actions to run on pull requests
+pr-run-mode = "plan"
+# Mark the checkout as safe for git inside the manylinux container
+github-build-setup = "../manylinux.yml"
+# Whether to sign macOS executables
+macos-sign = true
+# Whether to sign Windows executables
+ssldotcom-windows-sign = "prod"
+# A GitHub repo to push Homebrew formulas to
+tap = "oxidecomputer/homebrew-tap-testing"
+# Create versioned Homebrew formulas
+version-formulas = true
+# Publish jobs to run in CI
+publish-jobs = ["homebrew"]
+
+[dist.completion-cmds.dist-test]
+trigger.subcommand = { name = "completion", format = "arg" }
+shells = ["bash","fish","zsh"]
+
+[dist.github-custom-runners.x86_64-unknown-linux-gnu.container]
+image = "quay.io/pypa/manylinux_2_28_x86_64"
+host = "x86_64-unknown-linux-musl"
+
+[dist.github-custom-runners]
+aarch64-apple-darwin = "macos-14"
+aarch64-pc-windows-msvc = "windows-11-arm"
+x86_64-apple-darwin = "macos-14"

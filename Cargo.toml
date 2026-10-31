@@ -1,0 +1,17 @@
+[package]
+name = "dist-test"
+description = "Test program for oxidecomputer/cargo-dist releases"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+repository = "https://github.com/oxidecomputer/dist-test"
+homepage = "https://github.com/oxidecomputer/dist-test"
+readme = "README.md"
+publish = false
+
+[package.metadata.dist]
+dist = true
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
